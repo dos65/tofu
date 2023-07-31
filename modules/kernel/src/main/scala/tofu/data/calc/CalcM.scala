@@ -26,13 +26,14 @@ object CalcM extends CalcMInstances {
   def get[S]: CalcM[Nothing, Any, S, S, Nothing, S]           = Get()
   def set[S](s: S): CalcM[Nothing, Any, Any, S, Nothing, S]   = Set(s)
 
-  def update[S1, S2](f: S1 => S2): CalcM[Nothing, Any, S1, S2, Nothing, S2]                                  =
-    get[S1].flatMapS[Nothing, Any, S2, Nothing,S2](s => set(f(s)))
-  def state[S1, S2, A](f: S1 => (S2, A)): CalcM[Nothing, Any, S1, S2, Nothing, A]                            =
-    get[S1].flatMapS[Nothing, Any, S2, Nothing, A] { s1 =>
-      val (s2, a) = f(s1)
-      set(s2) as a
-    }
+  def update[S1, S2](f: S1 => S2): CalcM[λ[(`+x`, `+y`) => Nothing], Any, S1, S2, Nothing, S2]                                  = 
+    get[S1].flatMapS(s => set(f(s)))
+  
+  def state[S1, S2, A](f: S1 => (S2, A)): CalcM[λ[(`+x`, `+y`) => Nothing], Any, S1, S2, Nothing, A]                            =
+     get[S1].flatMapS { s1 =>
+       val (s2, a) = f(s1)
+       set(s2) as a
+     }
   def stateT[F[+_], S1, S2, A](f: S1 => F[(S2, A)]): CalcM[λ[(`+x`, `+y`) => F[y]], Any, S1, S2, Nothing, A] = {
     type F2[+x, +y] = F[y]
     CalcM.get[S1].flatMapS { s1 =>
@@ -46,7 +47,7 @@ object CalcM extends CalcMInstances {
   def defer[F[+_, +_], R, S1, S2, E, A](x: => CalcM[F, R, S1, S2, E, A]) = Defer(() => x)
   def delay[S, A](x: => A): CalcM[Nothing, Any, S, S, Nothing, A]        = defer(pure[S, A](x))
 
-  def write[S](s: S)(implicit S: Monoid[S]): CalcM[Nothing, Any, S, S, Nothing, S] = update(S.combine(_, s))
+  def write[S](s: S)(implicit S: Monoid[S]): CalcM[λ[(`+x`, `+y`) => Nothing], Any, S, S, Nothing, S] = update(S.combine(_, s))
 
   def lift[F[+_, +_], S, E, A](fea: F[E, A]): CalcM[F, Any, S, S, E, A] = Sub(fea)
 
@@ -87,7 +88,7 @@ object CalcM extends CalcMInstances {
     def submit[X](r: Any, s: S, cont: Continue[S, Nothing, S, X]): X                                       = cont.success(s, s)
     override def local[R1](f: R1 => Any): CalcM[Nothing, R1, S, S, Nothing, S]                             = this
     override def dimapState[SI1, SO1](f: SI1 => S, g: S => SO1): CalcM[Nothing, Any, SI1, SO1, Nothing, S] =
-      get[SI1].productRS[Nothing, Any, SO1, S, Nothing](state { s1 =>
+      get[SI1].productRS(state { s1 =>
         val s = f(s1)
         (g(s), s)
       })
@@ -101,7 +102,7 @@ object CalcM extends CalcMInstances {
   final case class Raise[S, E](e: E) extends CalcMResStatic[S, S, E, Nothing]   {
     def submit[X](r: Any, s: S, cont: Continue[Nothing, E, S, X]): X                                       = cont.error(s, e)
     override def local[R1](f: R1 => Any): CalcM[Nothing, R1, S, S, E, Nothing]                             = this
-    override def dimapState[SI1, SO1](f: SI1 => S, g: S => SO1): CalcM[Nothing, Any, SI1, SO1, E, Nothing] =
+    override def dimapState[SI1, SO1](f: SI1 => S, g: S => SO1): CalcM[λ[(`+x`, `+y`) => Nothing], Any, SI1, SO1, E, Nothing] =
       update(g compose f).swap errorAs_ e
   }
   final case class Defer[+F[+_, +_], -R, -S1, +S2, +E, +A](runStep: () => CalcM[F, R, S1, S2, E, A])
@@ -192,21 +193,23 @@ object CalcM extends CalcMInstances {
         val cont = sub.iss.substitute[Cont](Continue.result[A, E, S2])
         StepResult.Wrap[F, R, S1, S2, E, E, A, A](r, init, sub.fa, cont)
       case p: Provide[F, r, S1, S2, E, A]            => step[F, r, S1, S2, E, A](p.inner, p.r, init)
-      case c1: Bound[F, R, S1, s1, S2, e1, E, a1, A] =>
+      case c1: Bound[F, R, S1, S1, S2, e1, E, a1, A] =>
+        type E1 = e1
+        type A1 = a1
         c1.src match {
-          case res: CalcMRes[R, S1, c1.MidState, e1, a1] =>
-            val (sm, next) = res.submit(r, init, c1.continue.withState[s1])
-            step[F, R, s1, S2, E, A](next, r, sm)
-          case d: Defer[F, R, S1, _, _, _]               => step(d.runStep().bind(c1.continue), r, init)
-          case sub: Sub[F, S1, s1, c1.MidErr, c1.MidVal] =>
+          case res: CalcMRes[R, S1, c1.MidState, E1, A1] =>
+            val (sm, next) = res.submit(r, init, c1.continue.withState[S1])
+            step[F, R, S1, S2, E, A](next, r, sm)
+          case d: Defer[F, R, S1, ?, ?, ?]               => step(d.runStep().bind(c1.continue), r, init)
+          case sub: Sub[F, S1, S1, c1.MidErr, c1.MidVal] =>
             type Cont[-S] = Continue[a1, e1, S, CalcM[F, R, S, S2, E, A]]
             val cont1 = sub.iss.substitute[Cont](c1.continue)
             StepResult.Wrap[F, R, S1, S2, e1, E, a1, A](r, init, sub.fa, cont1)
-          case p: ProvideM[F, R, S1, _, _, _]            =>
-            type Cont[r] = Continue[a1, e1, s1, CalcM[F, r, s1, S2, E, A]]
+          case p: ProvideM[F, R, S1, S1, E1, A1]            =>
+            type Cont[r] = Continue[A1, E1, S1, CalcM[F, r, S1, S2, E, A]]
             val kcont = p.any.substitute[Cont](c1.continue)
             step(p.inner.bind[F, p.R1, E, S2, A](kcont), p.r, init)
-          case c2: Bound[F, R, S1, s2, _, e2, _, a2, _]  =>
+          case c2: Bound[F, R, S1, s2, ?, e2, ?, a2, ?]  =>
             step(c2.src.bind(Continue.compose(c2.continue, c1.continue)), r, init)
         }
     }
