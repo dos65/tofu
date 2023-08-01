@@ -32,10 +32,10 @@ object Lift extends LiftInstances1 {
   }
   implicit def liftIdentity[F[_]]: Lift[F, F]   = liftIdentityAny.asInstanceOf[Lift[F, F]]
 
-  private val unliftReaderTAny: Unlift[AnyK, ReaderT[AnyK, Any, *]] = {
-    type RT[a] = ReaderT[AnyK, Any, a]
-    new Unlift[AnyK, RT] {
-      def lift[A](fa: AnyK[A]): RT[A] = ReaderT.liftF(fa)
+  private val unliftReaderTAny: Unlift[hktAny.AnyK, ReaderT[hktAny.AnyK, Any, *]] = {
+    type RT[a] = ReaderT[hktAny.AnyK, Any, a]
+    new Unlift[hktAny.AnyK, RT] {
+      def lift[A](fa: hktAny.AnyK[A]): RT[A] = ReaderT.liftF(fa)
 
       val unlift: RT[RT ~> AnyK] = ReaderT[AnyK, Any, RT ~> AnyK](r => funK[RT, AnyK](f => f.run(r)))
     }
