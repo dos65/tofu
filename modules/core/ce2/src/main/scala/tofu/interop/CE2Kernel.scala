@@ -5,20 +5,7 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import cats.effect.concurrent.{MVar, Ref}
-import cats.effect.{
-  Async,
-  Blocker,
-  Bracket,
-  Concurrent,
-  ConcurrentEffect,
-  ContextShift,
-  Effect,
-  ExitCase,
-  Fiber,
-  IO,
-  Sync,
-  Timer
-}
+import cats.effect.{Async, Blocker, Bracket, Concurrent, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, Timer}
 import cats.{Functor, Id, Monad, Parallel, Traverse, ~>}
 import tofu.compat.unused
 import tofu.concurrent._
