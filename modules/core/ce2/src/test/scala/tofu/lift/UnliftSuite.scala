@@ -14,7 +14,7 @@ class UnliftSuite extends AnyFlatSpec {
       implicitly[Lift[Option, Option]].lift(42.some) === Some(42)
     )
     assert(
-      implicitly[Lift[Option, ReaderT[Option, String, *]]].lift(42.some).run("x") === Some(42)
+      implicitly[Lift[Option, ReaderT[Option, String, _]]].lift(42.some).run("x") === Some(42)
     )
   }
 }
@@ -23,7 +23,7 @@ object UnliftSuite {
 
   def summonLiftInstances[F[_], R](): Unit = {
     implicitly[Lift[F, F]]
-    implicitly[Lift[F, ReaderT[F, R, *]]]
+    implicitly[Lift[F, ReaderT[F, R, _]]]
     ()
   }
 
@@ -46,25 +46,25 @@ object UnliftSuite {
 
   def summonUnliftInstances[F[_]: Applicative, R](): Unit = {
     implicitly[Unlift[F, F]]
-    implicitly[Unlift[F, ReaderT[F, R, *]]]
+    implicitly[Unlift[F, ReaderT[F, R, _]]]
     ()
   }
 
   def summonUnliftIOInstances1[F[_]: Effect, R](): Unit = {
     implicitly[UnliftIO[F]]
-    implicitly[UnliftIO[ReaderT[F, R, *]]]
-    implicitly[Unlift[F, ReaderT[F, R, *]]]
+    implicitly[UnliftIO[ReaderT[F, R, _]]]
+    implicitly[Unlift[F, ReaderT[F, R, _]]]
     ()
   }
 
   def summonUnliftIOInstances2[R](): Unit = {
-    implicitly[UnliftIO[ReaderT[IO, R, *]]]
+    implicitly[UnliftIO[ReaderT[IO, R, _]]]
     implicitly[UnliftIO[IO]]
     ()
   }
 
   def summonUnliftIOInstances3[F[_]: UnliftIO: Monad, R](): Unit = {
-    implicitly[UnliftIO[ReaderT[F, R, *]]]
+    implicitly[UnliftIO[ReaderT[F, R, _]]]
     ()
   }
 

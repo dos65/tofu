@@ -4,10 +4,10 @@ import cats.{Functor, Monad}
 import cats.effect.concurrent.{Ref, Semaphore}
 import tofu.Fire
 import tofu.concurrent.{Agent, SerialAgent}
-import cats.syntax.all._
+import cats.syntax.all.*
 import tofu.lift.Lift
-import tofu.syntax.fire._
-import tofu.syntax.liftKernel._
+import tofu.syntax.fire.*
+import tofu.syntax.liftKernel.*
 
 /** Default implementation of [[tofu.concurrent.Agent]] that consists of [[cats.effect.concurrent.Ref]] and
   * [[cats.effect.concurrent.Semaphore]]

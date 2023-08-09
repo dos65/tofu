@@ -23,10 +23,10 @@ trait CardStorage[F[_]] {
 
 object CardStorage {
 
-  def make[F[_]: Raise[*[_], CardNotFound]]: CardStorage[F] = new Impl[F]
+  def make[F[_]: ({ type L[x[_]] = Raise[x, CardNotFound] })#L]: CardStorage[F] = new Impl[F]
 
   @unused
-  private final class Impl[F[_]: Raise[*[_], CardNotFound]] extends CardStorage[F] {
+  private final class Impl[F[_]: ({ type L[x[_]] = Raise[x, CardNotFound] })#L] extends CardStorage[F] {
     override def get(cardId: Long): F[Card]                             = ???
     override def updateBalance(cardId: Long, newBalance: Long): F[Unit] = ???
   }
@@ -38,10 +38,10 @@ trait UserStorage[F[_]] {
 
 object UserStorage {
 
-  def make[F[_]: Raise[*[_], UserNotFound]]: UserStorage[F] = new Impl[F]
+  def make[F[_]: ({ type L[x[_]] = Raise[x, UserNotFound] })#L]: UserStorage[F] = new Impl[F]
 
   @unused
-  private final class Impl[F[_]: Raise[*[_], UserNotFound]] extends UserStorage[F] {
+  private final class Impl[F[_]: ({ type L[x[_]] = Raise[x, UserNotFound] })#L] extends UserStorage[F] {
     override def get(userId: Long): F[User] = ???
   }
 }
@@ -52,10 +52,10 @@ trait WithdrawalService[F[_]] {
 
 object WithdrawalService {
 
-  def make[F[_]: Raise[*[_], WithdrawalFailed]: FlatMap]: WithdrawalService[F] =
+  def make[F[_]: ({ type L[x[_]] = Raise[x, WithdrawalFailed] })#L: FlatMap]: WithdrawalService[F] =
     new Impl[F](UserStorage.make, CardStorage.make)
 
-  private final class Impl[F[_]: Raise[*[_], WithdrawalFailed]: FlatMap](
+  private final class Impl[F[_]: ({ type L[x[_]] = Raise[x, WithdrawalFailed] })#L: FlatMap](
       userStorage: UserStorage[F],
       cardStorage: CardStorage[F]
   ) extends WithdrawalService[F] {
@@ -74,10 +74,10 @@ trait Payments[F[_]] {
 
 object Payments {
 
-  def make[F[_]: Errors[*[_], WithdrawalFailed]: FlatMap]: Payments[F] =
+  def make[F[_]: ({ type L[x[_]] = Errors[x, WithdrawalFailed] })#L: FlatMap]: Payments[F] =
     new Impl[F](WithdrawalService.make)
 
-  private final class Impl[F[_]: Handle[*[_], WithdrawalFailed]](
+  private final class Impl[F[_]: ({ type L[x[_]] = Handle[x, WithdrawalFailed] })#L](
       withdrawalService: WithdrawalService[F]
   ) extends Payments[F] {
     override def processPayment(userId: Long, amount: Long): F[Unit] =

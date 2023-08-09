@@ -8,11 +8,11 @@ import cats.effect.concurrent.{MVar, Ref}
 import cats.effect.{Async, Blocker, Bracket, Concurrent, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, Timer}
 import cats.{Functor, Id, Monad, Parallel, Traverse, ~>}
 import tofu.compat.unused
-import tofu.concurrent._
+import tofu.concurrent.*
 import tofu.internal.NonTofu
-import tofu.internal.carriers._
+import tofu.internal.carriers.*
 import tofu.lift.Lift
-import tofu.syntax.monadic._
+import tofu.syntax.monadic.*
 import tofu.internal.instances.PerformViaUnlift
 
 object CE2Kernel {
@@ -38,8 +38,8 @@ object CE2Kernel {
 
   final implicit def finallyFromBracket[F[_], E](implicit
       F: Bracket[F, E]
-  ): FinallyCarrier2.Aux[F, E, CEExit[E, *]] =
-    new FinallyCarrier2.Impl[F, E, CEExit[E, *]] {
+  ): FinallyCarrier2.Aux[F, E, CEExit[E, _]] =
+    new FinallyCarrier2.Impl[F, E, CEExit[E, _]] {
       def finallyCase[A, B, C](init: F[A])(action: A => F[B])(release: (A, CEExit[E, B]) => F[C]): F[B] =
         F.bracketCase(init)(action) { case (a, exit) =>
           F.void(release(a, exit))
@@ -54,8 +54,8 @@ object CE2Kernel {
   final def startFromConcurrent[F[_]](implicit
       F: Concurrent[F],
       @unused _nonTofu: NonTofu[F]
-  ): FibersCarrier2.Aux[F, Id, Fiber[F, *]] =
-    new FibersCarrier2.Impl[F, Id, Fiber[F, *]] {
+  ): FibersCarrier2.Aux[F, Id, Fiber[F, _]] =
+    new FibersCarrier2.Impl[F, Id, Fiber[F, _]] {
       def start[A](fa: F[A]): F[Fiber[F, A]]                                                = F.start(fa)
       def fireAndForget[A](fa: F[A]): F[Unit]                                               = F.void(start(fa))
       def racePair[A, B](fa: F[A], fb: F[B]): F[Either[(A, Fiber[F, B]), (Fiber[F, A], B)]] = F.racePair(fa, fb)
@@ -120,7 +120,7 @@ object CE2Kernel {
       F: ContextConcurrentEffect[F],
       @unused _nt: NonTofu[F]
   ): PerformCarrier2Context[F] =
-    new PerformViaUnlift[F, F.Base, PerformOf.ExitCont[Throwable, *], Unit]()(
+    new PerformViaUnlift[F, F.Base, PerformOf.ExitCont[Throwable, _], Unit]()(
       performConcurrentEffect[F.Base](F.concurrentEffect, NonTofu.refute),
       F.unlift,
       F.apply

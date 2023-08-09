@@ -144,5 +144,5 @@ trait DoSyntaxExtension extends DoSyntaxExtension1 {
 trait DoSyntaxExtension1 {
   def Do[F[_]] = new DoMonad.DoMethods[F](true)
 
-  @inline final implicit def Do[F[_], A](fa: F[A]): DoMonad.TofuDoOps[F, A] = new DoMonad.TofuDoOps[F, A](fa)
+  final implicit def Do[F[_], A](fa: F[A]): DoMonad.TofuDoOps[F, A] = new DoMonad.TofuDoOps[F, A](fa)
 }
