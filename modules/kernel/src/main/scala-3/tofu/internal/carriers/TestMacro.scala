@@ -28,18 +28,18 @@ object TestMacro {
     val start: Term = Ident(root.termRef)
     val wtf = tail.foldLeft(start){(acc, s) => acc.select(s)}
 
-    // val sample = 
-    //   '{
-    //     object foo {
-    //       class X[F[_]]
-    //       def testPath[F[_]]: X[F] = ???
-    //     }
-    //     object bar {
-    //       foo.testPath[scala.concurrent.Future]
-    //     }
-    //   }
+    val sample = 
+      '{
+        object foo {
+          class X[F[_]]
+          def testPath[F[_]]: X[F] = ???
+        }
+        object bar {
+          foo.testPath[scala.concurrent.Future]
+        }
+      }
 
-    // println(sample.asTerm)
+    println(sample.asTerm)
     
 
     // List(
