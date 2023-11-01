@@ -10,38 +10,90 @@ object Interop {
   inline def delegate1_0[F[_], E, X](inline path: String) =
     ${ mkDelegate1_0[F, E, X]('path) }
 
+  inline def delegate0_1_p[T, F[_], P, X](inline path: String, inline p: P) =
+    ${ mkDelegate0_1_p[T, F, P, X]('path, 'p) }
+
   inline def delegate2[I[_], F[_], X](inline path: String) =
-    ${ mkDelegate2[F, I, X]('path) }
+    ${ mkDelegate2[I, F, X]('path) }
 
   def mkDelegate1[F[_]: Type, X: Type](path: Expr[String])(using Quotes): Expr[X] =
     import quotes.reflect.*
-    mkDelegate[X](path, TypeTree.of[F])
+    mkDelegateImpl[X](path, Nil, TypeTree.of[F])
 
   def mkDelegate1_0[F[_]: Type, E: Type, X: Type](path: Expr[String])(using Quotes): Expr[X] =
     import quotes.reflect.*
-    mkDelegate[X](path, TypeTree.of[F], TypeTree.of[E])
+    mkDelegateImpl[X](path, Nil, TypeTree.of[F], TypeTree.of[E])
+
+  def mkDelegate0_1_p[T: Type, F[_]: Type, P, X: Type](path: Expr[String], p: Expr[P])(using Quotes): Expr[X] =
+    import quotes.reflect.*
+    mkDelegateImpl[X](path, p.asTerm :: Nil, TypeTree.of[T], TypeTree.of[F])
 
   def mkDelegate2[I[_]: Type, F[_]: Type, X: Type](path: Expr[String])(using Quotes): Expr[X] =
     import quotes.reflect.*
-    mkDelegate[X](path, TypeTree.of[I], TypeTree.of[F])
+    mkDelegateImpl[X](path, Nil, TypeTree.of[I], TypeTree.of[F])
 
-  def mkDelegate[X: Type](using Quotes)(path: Expr[String], tps: quotes.reflect.TypeTree*): Expr[X] =
+  private def mkDelegateImpl[X: Type](using
+      Quotes
+  )(path: Expr[String], args: List[quotes.reflect.Term], tps: quotes.reflect.TypeTree*): Expr[X] =
     import quotes.reflect.*
-    val sym     = Symbol.requiredMethod(path.valueOrAbort)
-    var iterSym = sym
-    val acc     = List.newBuilder[Symbol]
+    try {    
+      println("START: " + path.show)
 
-    while !iterSym.isNoSymbol do
-      val sym = if iterSym.isClassDef then iterSym.companionModule else iterSym
-      acc += sym
-      iterSym = iterSym.owner
+      val sym = Symbol.requiredMethod(path.valueOrAbort)
+      println("|||termRef:" + sym.termRef.show)
+      // println("|||tree:" + sym.tree.show)
+      // println("|||tree.getClas:" + sym.tree.getClass())
 
-    val root :: tail = acc.result().reverse
-    val start: Term  = Ident(root.termRef)
-    val wtf          = tail.foldLeft(start) { (acc, s) => acc.select(s) }
-    val out          = TypeApply(wtf, tps.toList)
-    val expr         = out.asExprOf[X]
-    println(expr.show)
-    expr
+      val symExists =
+        try {
+          sym.tree
+          true
+        } catch { case _ => false }
 
+      if !symExists then
+        println("!sym.exists")
+        report.errorAndAbort("Boom")
+      else
+        val wtf              = Ident(sym.termRef)
+        val withTypes        = wtf.appliedToTypeTrees(tps.toList)
+        println("DEBUG: " + withTypes.tpe.show)
+        val withExplicitArgs =
+          if args.nonEmpty then withTypes.appliedToArgs(args)
+          else withTypes
+
+        // println("AAA1" + withTypes.tpe.show)
+        // println("AAA2" + withTypes.tpe)
+        // println("BBB1" + withTypes.etaExpand(sym).show)
+        // println("BBB1" + withTypes.etaExpand(sym))
+
+        val withImplicitArgs = withExplicitArgs.tpe match
+          case t: LambdaType =>
+            println("Lambda:" + t.paramNames + " | " + t.paramTypes + " | " + t.resType.show)
+            println("Trying to get implicits for this types: " + t.paramTypes.map(_.show).mkString(", "))
+            val summonedInst = t.paramTypes.map(t =>
+              Implicits.search(t) match
+                case result: ImplicitSearchSuccess => 
+                  println(s"Found implicit instance for type: ${t.show}: ${result.tree.show}")
+                  result.tree
+                case _                             =>
+                  println(s"Cannot find an implicit instance for type ${t.show}!")
+                  report.errorAndAbort(s"Cannot find an implicit instance for type ${t.show}! Please help!")
+            )
+            withExplicitArgs.appliedToArgs(summonedInst)
+          case _             =>
+            println("Non_Lambda: " + withExplicitArgs.tpe)
+            withExplicitArgs
+
+        println("DEBUG_FINALLY: " + withImplicitArgs.show)
+
+        val expr = withImplicitArgs.asExprOf[X]
+        println("DEBUG_FINALLY_EXPR: " + expr.show)
+        expr
+      } catch {
+        case e: scala.quoted.runtime.StopMacroExpansion =>
+          throw e
+        case err =>
+          println("ERROR: " + err)
+          report.errorAndAbort("Error in macros: " + err)
+      }
 }
