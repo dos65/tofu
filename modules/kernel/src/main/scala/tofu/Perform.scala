@@ -42,7 +42,7 @@ object PerformVia extends PerformInstance with PerformInstance1 {
   def apply[F[_], Cont[_], Cancel](implicit instance: PerformVia[F, Cont, Cancel]): PerformVia[F, Cont, Cancel] =
     instance
 
-  implicit def contravariantK[F[_], Cancel]: ContravariantK[({ type L[x[_]] = PerformVia[F, x[_], Cancel] })#L] =
+  implicit def contravariantK[F[_], Cancel]: ContravariantK[({ type L[x[_]] = PerformVia[F, x, Cancel] })#L] =
     new PerformViaContravariantK[F, Cancel]
 
 }
