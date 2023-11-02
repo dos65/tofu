@@ -37,7 +37,9 @@ object Interop {
   )(path: Expr[String], args: List[quotes.reflect.Term], tps: quotes.reflect.TypeTree*): Expr[X] =
     import quotes.reflect.*
     try {    
-      println("START: " + path.show)
+      println("START_path: " + path.show)
+      println("START_types: " + tps.map(_.show))
+      println("START_args: " + args.map(_.show))
 
       val sym = Symbol.requiredMethod(path.valueOrAbort)
       println("|||termRef:" + sym.termRef.show)

@@ -12,4 +12,4 @@ trait PerformCarrier2ContextMacro:
 
 trait PerformCarrier3Macro:
   implicit inline def interop3IO[F[_]]: PerformCarrier3[F] =
-    Interop.delegate1[F, PerformCarrier3[F]]("tofu.interop.CE2Kernel.performDispatchContext")
+    Interop.delegate1[F, PerformCarrier3[F]]("tofu.interop.CE3Kernel.performDispatchContext")
