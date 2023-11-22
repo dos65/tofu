@@ -72,13 +72,13 @@ object Interop {
 
         // For such cases old and classic `asInstanceOf` helps with extra casting.
 
-        val asInstanceOf = TypeRepr.of[AnyRef].typeSymbol.methodMember("asInstanceOf").head
-        val casted       =
-          withImplicitArgs
-            .select(asInstanceOf)
-            .appliedToType(TypeRepr.of[X])
+        // val asInstanceOf = TypeRepr.of[AnyRef].typeSymbol.methodMember("asInstanceOf").head
+        // val casted       =
+        //   withImplicitArgs
+        //     .select(asInstanceOf)
+        //     .appliedToType(TypeRepr.of[X])
 
-        casted.asExprOf[X]
+        withImplicitArgs.asExprOf[X]
     } catch {
       case e: scala.quoted.runtime.StopMacroExpansion =>
         throw e

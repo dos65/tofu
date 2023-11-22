@@ -41,4 +41,16 @@ trait Finally[F[_], Exit[_]] extends Guarantee[F] {
   def finallyCase[A, B, C](init: F[A])(action: A => F[B])(release: (A, Exit[B]) => F[C]): F[B]
 }
 
-object Finally extends Effect2Comp[Finally]
+object Finally extends Effect2Comp[Finally] {
+
+  import tofu.internal.carriers.{FinallyCarrier2, FinallyCarrier3}
+  import cats.MonadError
+  import scala.compiletime.summonFrom
+
+
+  inline given [F[_], E, Exit[_]](using m: MonadError[F, E]): Finally[F, Exit] = 
+    summonFrom {
+      case carrier: FinallyCarrier3.Aux[F, E, Exit] => carrier.content
+      case carrier: FinallyCarrier2.Aux[F, E, Exit] => carrier.content
+    }
+}

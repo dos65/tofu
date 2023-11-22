@@ -15,6 +15,7 @@ object GuaranteeSuite {
   }
 
   def summonInstancesForBracket[F[_]](implicit F: MonadCancelThrow[F]): Unit = {
+    implicitly[FinallyCarrier3.Aux[F, Throwable, ({type L[x] = Any})#L]]
     implicitly[Guarantee[F]]
 
     implicitly[FinallyCarrier3.Aux[F, Throwable, Outcome[F, Throwable, _]]]
