@@ -16,7 +16,6 @@ lazy val defaultSettings = Seq(
   scalacWarningConfig,
   Test / tpolecatExcludeOptions += ScalacOptions.warnNonUnitStatement,
   Compile / doc / tpolecatExcludeOptions ++= Set(ScalacOptions.fatalWarnings, ScalacOptions.warnError),
-  //docs / scalacOptions -= "-Xfatal-warnings",
   crossScalaVersions := Vector(Version.scala212, Version.scala213),
   libraryDependencies ++= {
     (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -465,12 +464,13 @@ lazy val tofu = project
 lazy val defaultScalacOptions =
   Seq(
     tpolecatExcludeOptions ++= Set(ScalacOptions.warnDeadCode, ScalacOptions.privateWarnDeadCode),
-    tpolecatExcludeOptions ++= (
-      if (!sys.env.get("CI").contains("true") || (minorVersion.value == 12))
-        Set(ScalacOptions.fatalWarnings)
-      else
-        Set.empty
-    )
+    tpolecatExcludeOptions ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 12))                            => Set(ScalacOptions.fatalWarnings, ScalacOptions.warnError)
+        case _ if !sys.env.get("CI").contains("true") => Set(ScalacOptions.fatalWarnings, ScalacOptions.warnError)
+        case _                                        => Set.empty
+      }
+    }
   )
 
 lazy val scala3MigratedModuleOptions =
@@ -517,7 +517,12 @@ lazy val macros = Seq(
     "-Ymacro-annotations",
     _.isBetween(ScalaVersion.V2_13_0, ScalaVersion.V3_0_0)
   ),
-  libraryDependencies ++= { if (minorVersion.value == 12) Seq(compilerPlugin(macroParadise)) else Seq() }
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq(compilerPlugin(macroParadise))
+      case _             => Seq.empty
+    }
+  }
 )
 
 lazy val noPublishSettings =
