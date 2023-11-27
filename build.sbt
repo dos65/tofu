@@ -474,6 +474,9 @@ lazy val scala3MigratedModuleOptions =
       ScalacOptions.source3,
       ScalacOption("-Xmigration", _ < ScalaVersion.V3_0_0)
     ),
+    tpolecatScalacOptions := {
+      tpolecatScalacOptions.value.filter(_.option != "-Ykind-projector")
+    },
     crossScalaVersions := Vector(Version.scala212, Version.scala213, Version.scala3)
   )
 
