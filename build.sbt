@@ -58,12 +58,13 @@ lazy val higherKindCore = projectMatrix
     defaultSettings,
     scala3MigratedModuleOptions,
     name := "tofu-core-higher-kind",
+    libraryDependencies ++= Seq(catsCore, catsFree, catsTaglessCore),
     libraryDependencies ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, n)) =>
-          Seq(catsCore, catsFree, catsTaglessMacros)
+          Seq(catsTaglessMacros)
         case _            =>
-          Seq(catsCore, catsFree, catsTaglessCore)
+          Seq.empty
       }
     },
   )
@@ -135,19 +136,26 @@ lazy val loggingStr = projectMatrix
       tethysJackson,
       slf4j,
       alleycats,
-      scalatest,
-      derevo,
-      catsTaglessMacros
+      catsTaglessCore,
+      scalatest
     ),
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) =>
+          Seq(derevo, catsTaglessMacros)
+        case _            =>
+          Seq.empty
+      }
+    }
   )
-  .jvmPlatform(scala2Versions)
+  .jvmPlatform(scala2And3Versions)
   .dependsOn(kernel)
 
 lazy val loggingDer = projectMatrix
   .in(modules / "logging" / "derivation")
   .settings(
     defaultSettings,
-    libraryDependencies ++= Seq(derevo, magnolia, slf4j, glassMacro % Test),
+    libraryDependencies ++= Seq(derevo, magnolia2, slf4j, glassMacro % Test),
     name := "tofu-logging-derivation"
   )
   .jvmPlatform(scala2Versions)
@@ -270,7 +278,7 @@ lazy val config = projectMatrix
   .in(util / "config")
   .settings(
     defaultSettings,
-    libraryDependencies ++= Seq(typesafeConfig, magnolia, derevo, glassCore),
+    libraryDependencies ++= Seq(typesafeConfig, magnolia2, derevo, glassCore),
     name := "tofu-config",
   )
   .jvmPlatform(scala2Versions)
@@ -290,7 +298,7 @@ lazy val derivation = projectMatrix
   .in(modules / "derivation")
   .settings(
     defaultSettings,
-    libraryDependencies ++= Seq(magnolia, derevo, catsTaglessMacros),
+    libraryDependencies ++= Seq(magnolia2, derevo, catsTaglessMacros),
     name := "tofu-derivation",
   )
   .jvmPlatform(scala2Versions)
