@@ -113,7 +113,7 @@ trait LoggingErrMidBuilder[E] extends LoggingMidBuilder with Builder[LoggingErrM
     override def result: LoggingErrMid[E, Res] = new LoggingErrMid[E, Res] {
       private[this] val argSeq = args.toSeq
 
-      def aroundErr[F[_]: Monad: Errors[*[_], E]: LoggingBase](fa: F[Res]): F[Res] =
+      def aroundErr[F[_]: Monad: ({ type L[x[_]] = Errors[x, E] })#L: LoggingBase](fa: F[Res]): F[Res] =
         onEnter(cls, method, argSeq) *>
           fa.onError(onFault(cls, method, argSeq, _: E))
             .flatTap(res => onLeave(cls, method, argSeq, res))

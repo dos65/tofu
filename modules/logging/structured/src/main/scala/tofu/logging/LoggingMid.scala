@@ -27,11 +27,11 @@ object LoggingMid extends builder.LoggingMidBuilder.DefaultImpl {
   * until this middleware is attached to the core instance
   */
 abstract class LoggingErrMid[E, A] extends LoggingMid[A] {
-  def aroundErr[F[_]: Monad: Errors[*[_], E]: LoggingBase](fa: F[A]): F[A]
+  def aroundErr[F[_]: Monad: ({ type L[x[_]] = Errors[x, E] })#L: LoggingBase](fa: F[A]): F[A]
 
   def around[F[_]: Monad: LoggingBase](fa: F[A]): F[A] = around(fa)
 
-  def toMid[F[_]: Monad: Errors[*[_], E]: LoggingBase]: Mid[F, A] = aroundErr(_)
+  def toMid[F[_]: Monad: ({ type L[x[_]] = Errors[x, E] })#L: LoggingBase]: Mid[F, A] = aroundErr(_)
 }
 
 object LoggingErrMid {

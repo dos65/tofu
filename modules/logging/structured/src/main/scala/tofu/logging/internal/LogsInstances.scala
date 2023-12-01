@@ -20,30 +20,30 @@ trait LogsInstances {
     def combine(x: Logs[I, F], y: Logs[I, F]): Logs[I, F] = Logs.combine(x, y)
   }
 
-  private[this] val logs1RepresentableAny: RepresentableK[Logs[*[_], Any]] =
-    higherKind.derived.genRepresentableK[Logs[*[_], Any]]
+  private[this] val logs1RepresentableAny: RepresentableK[({ type L[x[_]] = Logs[x, Any] })#L] =
+    higherKind.derived.genRepresentableK[({ type L[x[_]] = Logs[x, Any] })#L]
 
-  implicit def logs1Representable[Y[_]]: RepresentableK[Logs[*[_], Y]] =
-    logs1RepresentableAny.asInstanceOf[RepresentableK[Logs[*[_], Y]]]
+  implicit def logs1Representable[Y[_]]: RepresentableK[({ type L[x[_]] = Logs[x, Y] })#L] =
+    logs1RepresentableAny.asInstanceOf[RepresentableK[({ type L[x[_]] = Logs[x, Y] })#L]]
 
-  implicit val logs2UniversalRepresentable: RepresentableK[Logs[Id, *[_]]] =
-    higherKind.derived.genRepresentableK[Logs[Id, *[_]]]
+  implicit val logs2UniversalRepresentable: RepresentableK[({ type L[x[_]] = Logs[Id, x] })#L] =
+    higherKind.derived.genRepresentableK[({ type L[x[_]] = Logs[Id, x] })#L]
 
-  implicit def logs2MonoidalK[Y[_]](implicit Y: Applicative[Y]): MonoidalK[Logs[Y, *[_]]] =
+  implicit def logs2MonoidalK[Y[_]](implicit Y: Applicative[Y]): MonoidalK[({ type L[x[_]] = Logs[Y, x] })#L] =
     new Logs2MonoidalK[Y] { def I: Applicative[Y] = Y }
 }
 
 private[logging] trait LogsInstances0 extends LogsInstances1 {
-  implicit def logs2ApplyK[Y[_]](implicit Y: Apply[Y]): ApplyK[Logs[Y, *[_]]] =
+  implicit def logs2ApplyK[Y[_]](implicit Y: Apply[Y]): ApplyK[({ type L[x[_]] = Logs[Y, x] })#L] =
     new Logs2ApplyK[Y] { def I: Apply[Y] = Y }
 }
 
 private[logging] trait LogsInstances1 {
-  implicit def logs2FunctorK[Y[_]](implicit Y: Functor[Y]): FunctorK[Logs[Y, *[_]]] =
+  implicit def logs2FunctorK[Y[_]](implicit Y: Functor[Y]): FunctorK[({ type L[x[_]] = Logs[Y, x] })#L] =
     new Logs2FunctorK[Y] { def I: Functor[Y] = Y }
 }
 
-trait Logs2FunctorK[Y[_]] extends FunctorK[Logs[Y, *[_]]] {
+trait Logs2FunctorK[Y[_]] extends FunctorK[({ type L[x[_]] = Logs[Y, x] })#L] {
   implicit def I: Functor[Y]
 
   def mapK[F[_], G[_]](af: Logs[Y, F])(fk: F ~> G): Logs[Y, G] = new Logs[Y, G] {
@@ -52,7 +52,7 @@ trait Logs2FunctorK[Y[_]] extends FunctorK[Logs[Y, *[_]]] {
   }
 }
 
-trait Logs2ApplyK[Y[_]] extends Logs2FunctorK[Y] with ApplyK[Logs[Y, *[_]]] {
+trait Logs2ApplyK[Y[_]] extends Logs2FunctorK[Y] with ApplyK[({ type L[x[_]] = Logs[Y, x] })#L] {
   implicit def I: Apply[Y]
 
   def zipWith2K[F[_], G[_], H[_]](af: Logs[Y, F], ag: Logs[Y, G])(f2: Function2K[F, G, H]): Logs[Y, H] =
@@ -66,7 +66,7 @@ trait Logs2ApplyK[Y[_]] extends Logs2FunctorK[Y] with ApplyK[Logs[Y, *[_]]] {
     zipWith2K(af, ag)(Function2K((f, g) => Tuple2K(f, g)))
 }
 
-trait Logs2MonoidalK[Y[_]] extends Logs2ApplyK[Y] with MonoidalK[Logs[Y, *[_]]] {
+trait Logs2MonoidalK[Y[_]] extends Logs2ApplyK[Y] with MonoidalK[({ type L[x[_]] = Logs[Y, x] })#L] {
   implicit def I: Applicative[Y]
 
   def pureK[F[_]](p: Point[F]): Logs[Y, F] = new Logs[Y, F] {

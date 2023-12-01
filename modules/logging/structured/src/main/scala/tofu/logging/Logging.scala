@@ -80,16 +80,16 @@ trait ServiceLogging[F[_], Service] extends LoggingBase[F] {
 }
 
 object ServiceLogging {
-  private[this] val representableAny: RepresentableK[ServiceLogging[*[_], Any]] =
-    higherKind.derived.genRepresentableK[ServiceLogging[*[_], Any]]
+  private[this] val representableAny: RepresentableK[({ type L[x[_]] = ServiceLogging[x, Any] })#L] =
+    higherKind.derived.genRepresentableK[({ type L[x[_]] = ServiceLogging[x, Any] })#L]
 
   implicit def initByLogs[I[_], F[_], Svc: ClassTag](implicit logs: Logs[I, F]): Init[I, ServiceLogging[F, Svc]] =
     new Init[I, ServiceLogging[F, Svc]] {
       def init: I[ServiceLogging[F, Svc]] = logs.service[Svc]
     }
 
-  final implicit def serviceLoggingRepresentable[Svc]: RepresentableK[ServiceLogging[*[_], Svc]] =
-    representableAny.asInstanceOf[RepresentableK[ServiceLogging[*[_], Svc]]]
+  final implicit def serviceLoggingRepresentable[Svc]: RepresentableK[({ type L[x[_]] = ServiceLogging[x, Svc] })#L] =
+    representableAny.asInstanceOf[RepresentableK[({ type L[x[_]] = ServiceLogging[x, Svc] })#L]]
 
   final implicit def byUniversal[F[_], Svc: ClassTag](implicit unilogs: Logging.Make[F]): ServiceLogging[F, Svc] =
     unilogs.service[Svc]
