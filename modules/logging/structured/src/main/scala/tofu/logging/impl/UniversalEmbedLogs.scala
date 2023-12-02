@@ -1,4 +1,5 @@
 package tofu.logging.impl
+
 import cats.{FlatMap, Id}
 import tofu.lift.Lift
 import tofu.logging.{Logging, Logs}

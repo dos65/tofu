@@ -8,6 +8,7 @@ import tofu.logging.internal.{LogsInstances, LogsInstances0, LogsInvariantSyntax
 import tofu.syntax.monadic._
 
 import scala.reflect.ClassTag
+import tofu.higherKind.HKAny
 
 /** A helper for creating instances of [[tofu.logging.Logging]], defining a way these instances will behave while doing
   * logging. Can create instances either on a by-name basic or a type tag basic. An instance of [[tofu.logging.Logs]]
@@ -46,16 +47,16 @@ trait Logs[+I[_], F[_]] extends LogsVOps[I, F] {
     *
     * val serviceLog = logs.of[Service] //ServiceLogging[ }}}
     */
-  final def of[Svc[_[_]]](implicit tag: ClassTag[Svc[Any]]): I[ServiceLogging[F, Svc[Any]]] =
-    service[Svc[Any]]
+  final def of[Svc[_[_]]](implicit tag: ClassTag[Svc[HKAny]]): I[ServiceLogging[F, Svc[HKAny]]] =
+    service[Svc[HKAny]]
 }
 
 object Logs extends LogsInstances with LogsInstances0 {
 
   @deprecated("Use Logging.Make[F]", since = "0.10.4")
   type Universal[F[_]]        = Logs[Id, F]
-  type Safe[I[_], F[_, _]]    = Logs[I, F[Nothing, *]]
-  type SafeUniversal[F[_, _]] = Logs[Id, F[Nothing, *]]
+  type Safe[I[_], F[_, _]]    = Logs[I, F[Nothing, _]]
+  type SafeUniversal[F[_, _]] = Logs[Id, F[Nothing, _]]
 
   def apply[I[_], F[_]](implicit logs: Logs[I, F]): Logs[I, F] = logs
 

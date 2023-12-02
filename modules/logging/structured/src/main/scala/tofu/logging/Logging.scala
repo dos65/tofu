@@ -4,15 +4,14 @@ import cats.kernel.Monoid
 import cats.{Applicative, Apply, FlatMap, Id}
 import org.slf4j.Marker
 import tofu.compat.unused
-import tofu.higherKind.{Function2K, RepresentableK}
+import tofu.higherKind.Function2K
 import tofu.logging.Logging.{Debug, Error, Info, Level, Trace, Warn}
 import tofu.logging.impl.{EmbedLogging, UniversalContextLogs, UniversalLogging}
 import tofu.syntax.monadic._
 import tofu.syntax.monoidalK._
-import tofu.{Delay, Init, WithContext, higherKind}
+import tofu.{Delay, Init, WithContext}
 
 import scala.reflect.ClassTag
-import scala.annotation.nowarn
 
 /** Typeclass equivalent of Logger. May contain specified some Logger instance or try to read it from the context
   */
@@ -79,17 +78,11 @@ trait ServiceLogging[F[_], Service] extends LoggingBase[F] {
   final def to[Svc2]: ServiceLogging[F, Svc2] = this.asInstanceOf[ServiceLogging[F, Svc2]]
 }
 
-object ServiceLogging {
-  private[this] val representableAny: RepresentableK[({ type L[x[_]] = ServiceLogging[x, Any] })#L] =
-    higherKind.derived.genRepresentableK[({ type L[x[_]] = ServiceLogging[x, Any] })#L]
-
+object ServiceLogging extends ServiceLoggingRepresentableKInstances {
   implicit def initByLogs[I[_], F[_], Svc: ClassTag](implicit logs: Logs[I, F]): Init[I, ServiceLogging[F, Svc]] =
     new Init[I, ServiceLogging[F, Svc]] {
       def init: I[ServiceLogging[F, Svc]] = logs.service[Svc]
     }
-
-  final implicit def serviceLoggingRepresentable[Svc]: RepresentableK[({ type L[x[_]] = ServiceLogging[x, Svc] })#L] =
-    representableAny.asInstanceOf[RepresentableK[({ type L[x[_]] = ServiceLogging[x, Svc] })#L]]
 
   final implicit def byUniversal[F[_], Svc: ClassTag](implicit unilogs: Logging.Make[F]): ServiceLogging[F, Svc] =
     unilogs.service[Svc]
@@ -105,7 +98,7 @@ trait Logging[F[_]] extends ServiceLogging[F, Nothing] {
   def asLogging: Logging[F] = this
 }
 
-object Logging {
+object Logging extends LoggingRepresentableKInstances {
 
   type Make[F[_]] = Logs[Id, F]
 
@@ -134,8 +127,8 @@ object Logging {
 
   type ForService[F[_], Svc] <: Logging[F]
 
-  type Safe[F[_, _]]     = Logging[F[Nothing, *]]
-  type SafeBase[F[_, _]] = LoggingBase[F[Nothing, *]]
+  type Safe[F[_, _]]     = Logging[F[Nothing, _]]
+  type SafeBase[F[_, _]] = LoggingBase[F[Nothing, _]]
 
   def apply[F[_]](implicit logging: Logging[F]): Logging[F] = logging
 
@@ -144,12 +137,9 @@ object Logging {
 
   /** having two logging implementation call `first` after `second` */
   def combine[F[_]: Apply](first: Logging[F], second: Logging[F]): Logging[F] =
-    first.zipWithK(second)(Function2K[F, F, F](_ *> _))
+    first.zipWithK[F, F](second)(Function2K[F, F, F](_ *> _))
 
   def flatten[F[_]: FlatMap](underlying: F[Logging[F]]): Logging[F] = new EmbedLogging[F](underlying)
-
-  @nowarn("cat=w-flag-self-implicit")
-  implicit val loggingRepresentable: RepresentableK[Logging] = higherKind.derived.genRepresentableK[Logging]
 
   implicit def loggingMonoid[F[_]: Applicative]: Monoid[Logging[F]] = new Monoid[Logging[F]] {
     val empty: Logging[F]                                 = Logging.empty[F]

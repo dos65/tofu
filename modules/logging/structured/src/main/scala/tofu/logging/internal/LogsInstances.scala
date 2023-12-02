@@ -3,9 +3,8 @@ package tofu.logging.internal
 import cats.data.Tuple2K
 import cats.kernel.Monoid
 import cats.tagless.{ApplyK, FunctorK}
-import cats.{Applicative, Apply, Functor, Id, ~>}
-import tofu.higherKind
-import tofu.higherKind.{Function2K, MonoidalK, Point, RepresentableK}
+import cats.{Applicative, Apply, Functor, ~>}
+import tofu.higherKind.{Function2K, MonoidalK, Point}
 import tofu.logging.{Logging, Logs}
 import cats.tagless.syntax.functorK._
 import tofu.syntax.monoidalK._
@@ -13,21 +12,12 @@ import tofu.syntax.monadic._
 
 import scala.reflect.ClassTag
 
-trait LogsInstances {
+trait LogsInstances extends LogsRepresentableKInstances {
 
   implicit def logsMonoid[I[_]: Applicative, F[_]: Applicative]: Monoid[Logs[I, F]] = new Monoid[Logs[I, F]] {
     def empty: Logs[I, F]                                 = Logs.empty[I, F]
     def combine(x: Logs[I, F], y: Logs[I, F]): Logs[I, F] = Logs.combine(x, y)
   }
-
-  private[this] val logs1RepresentableAny: RepresentableK[({ type L[x[_]] = Logs[x, Any] })#L] =
-    higherKind.derived.genRepresentableK[({ type L[x[_]] = Logs[x, Any] })#L]
-
-  implicit def logs1Representable[Y[_]]: RepresentableK[({ type L[x[_]] = Logs[x, Y] })#L] =
-    logs1RepresentableAny.asInstanceOf[RepresentableK[({ type L[x[_]] = Logs[x, Y] })#L]]
-
-  implicit val logs2UniversalRepresentable: RepresentableK[({ type L[x[_]] = Logs[Id, x] })#L] =
-    higherKind.derived.genRepresentableK[({ type L[x[_]] = Logs[Id, x] })#L]
 
   implicit def logs2MonoidalK[Y[_]](implicit Y: Applicative[Y]): MonoidalK[({ type L[x[_]] = Logs[Y, x] })#L] =
     new Logs2MonoidalK[Y] { def I: Applicative[Y] = Y }
@@ -47,7 +37,7 @@ trait Logs2FunctorK[Y[_]] extends FunctorK[({ type L[x[_]] = Logs[Y, x] })#L] {
   implicit def I: Functor[Y]
 
   def mapK[F[_], G[_]](af: Logs[Y, F])(fk: F ~> G): Logs[Y, G] = new Logs[Y, G] {
-    override def forService[Svc: ClassTag]: Y[Logging[G]] = af.forService[Svc].map(_.mapK(fk))
+    override def forService[Svc: ClassTag]: Y[Logging[G]] = af.forService[Svc].map(a => a.mapK(fk))
     def byName(name: String): Y[Logging[G]]               = af.byName(name).map(_.mapK(fk))
   }
 }
@@ -62,8 +52,8 @@ trait Logs2ApplyK[Y[_]] extends Logs2FunctorK[Y] with ApplyK[({ type L[x[_]] = L
       def byName(name: String): Y[Logging[H]]               = (af.byName(name), ag.byName(name)).mapN(_.zipWithK(_)(f2))
     }
 
-  def productK[F[_], G[_]](af: Logs[Y, F], ag: Logs[Y, G]): Logs[Y, Tuple2K[F, G, *]] =
-    zipWith2K(af, ag)(Function2K((f, g) => Tuple2K(f, g)))
+  def productK[F[_], G[_]](af: Logs[Y, F], ag: Logs[Y, G]): Logs[Y, Tuple2K[F, G, _]] =
+    zipWith2K(af, ag)(Function2K.apply[F, G]((f, g) => Tuple2K(f, g)))
 }
 
 trait Logs2MonoidalK[Y[_]] extends Logs2ApplyK[Y] with MonoidalK[({ type L[x[_]] = Logs[Y, x] })#L] {

@@ -11,7 +11,7 @@ import scala.reflect.{ClassTag, classTag}
 class CachedLogs[I[_]: Monad: Guarantee, F[_]](
     underlying: Logs[I, F],
     nameCache: QVar[I, Map[String, Logging[F]]],
-    tagCache: QVar[I, Map[ClassTag[_], Logging[F]]]
+    tagCache: QVar[I, Map[ClassTag[?], Logging[F]]]
 ) extends Logs[I, F] {
   private[this] case object NoneLogging extends Logging[F] {
     def write(level: Logging.Level, message: String, values: LoggedValue*): F[Unit] =

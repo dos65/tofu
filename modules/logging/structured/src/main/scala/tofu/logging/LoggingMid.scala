@@ -3,7 +3,6 @@ package tofu.logging
 import cats.Monad
 import tofu.Errors
 import tofu.higherKind.Mid
-import tofu.higherKind.derived.HigherKindedMacros
 
 /** Logging middleware Alg[LoggingMid] is a special form of implicit evidence of injectable logging support generally
   * you don't need `Logging` instance to derive this so choice of logging postponed until this middleware is attached to
@@ -15,9 +14,8 @@ abstract class LoggingMid[A] {
   def toMid[F[_]: Monad: LoggingBase]: Mid[F, A] = around(_)
 }
 
-object LoggingMid extends builder.LoggingMidBuilder.DefaultImpl {
+object LoggingMid extends builder.LoggingMidBuilder.DefaultImpl with LoggingMidMacroInstances {
   type Result[A] = LoggingMid[A]
-  def instance[U[_[_]]]: U[LoggingMid] = macro HigherKindedMacros.factorizeThis[U]
 
   type Of[U[_[_]]] = U[LoggingMid]
 }
@@ -35,8 +33,8 @@ abstract class LoggingErrMid[E, A] extends LoggingMid[A] {
 }
 
 object LoggingErrMid {
-  type Of[U[_[_]], E] = U[LoggingErrMid[E, *]]
-  type Try[U[_[_]]]   = U[LoggingErrMid[Throwable, *]]
+  type Of[U[_[_]], E] = U[LoggingErrMid[E, _]]
+  type Try[U[_[_]]]   = U[LoggingErrMid[Throwable, _]]
 
   object Try extends builder.LoggingErrMidBuilder.DefaultImpl[Throwable]
 }

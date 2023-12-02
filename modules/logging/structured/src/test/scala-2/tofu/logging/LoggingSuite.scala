@@ -97,7 +97,7 @@ object LoggingSuite {
   val exception = new RuntimeException("ya oshibka")
   exception.setStackTrace(Array(new StackTraceElement("test1", "test2", "test3", 1337)))
 
-  class Exprs[F[_]: ServiceLogging[*[_], LoggingSuite]] {
+  class Exprs[F[_]: ({ type L[x[_]] = ServiceLogging[x, LoggingSuite] })#L] {
 
     val hello: F[Unit] = warn"hello"
 

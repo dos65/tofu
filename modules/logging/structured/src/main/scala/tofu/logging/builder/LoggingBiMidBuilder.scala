@@ -11,7 +11,7 @@ import scala.collection.mutable.Buffer
 import scala.reflect.ClassTag
 
 trait BiBuilder[+T[_, _]] {
-  def prepare[Alg[_[_, _]]](implicit Alg: ClassTag[Alg[Any]]): BiPrepared[Alg, T]
+  def prepare[Alg[_[_, _]]](implicit Alg: ClassTag[Alg[({ type L[_, _] = Any })#L]]): BiPrepared[Alg, T]
 }
 
 trait BiMethod[U[f[_, _]], Err, Res, +T[_, _]] {
@@ -28,24 +28,25 @@ abstract class LoggingBiMidBuilder extends BiBuilder[LoggingBiMid] {
 
   /** do some logging upon enter to method invocation */
   def onEnter[F[+_, +_]: Logging.SafeBase](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: Seq[(String, LoggedValue)]
   ): F[Nothing, Unit]
 
   /** do some logging after leaving method invocation with known result or error */
   def onLeave[F[+_, +_]: Logging.SafeBase](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: Seq[(String, LoggedValue)],
       res: LoggedValue,
       ok: Boolean
   ): F[Nothing, Unit]
 
-  def prepare[Alg[_[_, _]]](implicit Alg: ClassTag[Alg[Any]]) = new PreparedImpl[Alg](Alg.runtimeClass)
+  def prepare[Alg[_[_, _]]](implicit Alg: ClassTag[Alg[({ type L[_, _] = Any })#L]]) =
+    new PreparedImpl[Alg](Alg.runtimeClass)
 
   protected class MethodImpl[U[f[_, _]], Err: Loggable, Res: Loggable](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: Buffer[(String, LoggedValue)]
   ) extends BiMethod[U, Err, Res, LoggingBiMid] {
@@ -66,7 +67,7 @@ abstract class LoggingBiMidBuilder extends BiBuilder[LoggingBiMid] {
     }
   }
 
-  class PreparedImpl[U[f[_, _]]](cls: Class[_]) extends BiPrepared[U, LoggingBiMid] {
+  class PreparedImpl[U[f[_, _]]](cls: Class[?]) extends BiPrepared[U, LoggingBiMid] {
     def start[Err: Loggable, Res: Loggable](method: String) = new MethodImpl[U, Err, Res](cls, method, Buffer())
   }
 }
@@ -75,12 +76,12 @@ object LoggingBiMidBuilder {
 
   class CustomLogLevel(logLevel: Level, errorLogLevel: Level) extends LoggingBiMidBuilder {
 
-    override def onEnter[F[+_, +_]](cls: Class[_], method: String, args: Seq[(String, LoggedValue)])(implicit
+    override def onEnter[F[+_, +_]](cls: Class[?], method: String, args: Seq[(String, LoggedValue)])(implicit
         F: Logging.SafeBase[F]
     ): F[Nothing, Unit] = F.write(logLevel, "entering {} {}", method, new ArgsLoggable(args))
 
     override def onLeave[F[+_, +_]](
-        cls: Class[_],
+        cls: Class[?],
         method: String,
         args: Seq[(String, LoggedValue)],
         res: LoggedValue,

@@ -129,6 +129,7 @@ lazy val loggingStr = projectMatrix
   .settings(
     name := "tofu-logging-structured",
     defaultSettings,
+    scala3MigratedModuleOptions,
     libraryDependencies ++= Seq(
       catsCore,
       circeCore,

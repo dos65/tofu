@@ -23,7 +23,7 @@ class LogAnnotation[A](val name: String, valueLoggable: Loggable[A]) {
   override def hashCode: Int = name.hashCode
 
   override def equals(other: Any): Boolean = other match {
-    case other: LogAnnotation[_] => name == other.name
+    case other: LogAnnotation[?] => name == other.name
     case _                       => false
   }
 

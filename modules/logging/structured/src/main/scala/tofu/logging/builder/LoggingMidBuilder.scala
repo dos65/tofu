@@ -9,10 +9,10 @@ import tofu.Errors
 import tofu.syntax.handle._
 import impl.ArgsLoggable
 import tofu.logging.Logging.Level
-import tofu.logging.LoggingBase
+import tofu.higherKind.HKAny
 
 trait Builder[+T[_]] {
-  def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[Any]]): Prepared[Alg, T]
+  def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[HKAny]]): Prepared[Alg, T]
 }
 
 trait Method[U[f[_]], Res, +T[_]] {
@@ -29,20 +29,21 @@ trait Prepared[U[f[_]], +T[_]] {
 trait LoggingMidBuilder extends Builder[LoggingMid] {
 
   /** do some logging upon enter to method invocation */
-  def onEnter[F[_]: LoggingBase](cls: Class[_], method: String, args: Seq[(String, LoggedValue)]): F[Unit]
+  def onEnter[F[_]: LoggingBase](cls: Class[?], method: String, args: Seq[(String, LoggedValue)]): F[Unit]
 
   /** do some logging after leaving method invocation with known result */
   def onLeave[F[_]: LoggingBase](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: Seq[(String, LoggedValue)],
       res: LoggedValue
   ): F[Unit]
 
-  def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[Any]]) = new PreparedImpl[Alg](Alg.runtimeClass)
+  def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[HKAny]]): Prepared[Alg, LoggingMid] =
+    new PreparedImpl[Alg](Alg.runtimeClass)
 
   protected class MethodImpl[U[f[_]], Res: Loggable](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: mutable.Buffer[(String, LoggedValue)]
   ) extends Method[U, Res, LoggingMid] {
@@ -59,18 +60,18 @@ trait LoggingMidBuilder extends Builder[LoggingMid] {
     }
   }
 
-  protected class PreparedImpl[U[f[_]]](cls: Class[_]) extends Prepared[U, LoggingMid] {
+  protected class PreparedImpl[U[f[_]]](cls: Class[?]) extends Prepared[U, LoggingMid] {
     def start[Res: Loggable](method: String): MethodImpl[U, Res] = new MethodImpl(cls, method, mutable.Buffer())
   }
 }
 
 object LoggingMidBuilder {
   trait Default extends LoggingMidBuilder {
-    def onEnter[F[_]](cls: Class[_], method: String, args: Seq[(String, LoggedValue)])(implicit
+    def onEnter[F[_]](cls: Class[?], method: String, args: Seq[(String, LoggedValue)])(implicit
         F: LoggingBase[F]
     ): F[Unit] = F.debug("entering {} {}", method, new ArgsLoggable(args))
 
-    def onLeave[F[_]](cls: Class[_], method: String, args: Seq[(String, LoggedValue)], res: LoggedValue)(implicit
+    def onLeave[F[_]](cls: Class[?], method: String, args: Seq[(String, LoggedValue)], res: LoggedValue)(implicit
         F: LoggingBase[F]
     ): F[Unit] = F.debug("leaving {} {} with result {}", method, new ArgsLoggable(args), res)
   }
@@ -80,11 +81,11 @@ object LoggingMidBuilder {
   trait CustomLevel extends LoggingMidBuilder {
     def onLog[F[_]](message: String, values: LoggedValue*)(implicit F: LoggingBase[F]): F[Unit]
 
-    def onEnter[F[_]](cls: Class[_], method: String, args: Seq[(String, LoggedValue)])(implicit
+    def onEnter[F[_]](cls: Class[?], method: String, args: Seq[(String, LoggedValue)])(implicit
         F: LoggingBase[F]
     ): F[Unit] = onLog("entering {} {}", method, new ArgsLoggable(args))
 
-    def onLeave[F[_]](cls: Class[_], method: String, args: Seq[(String, LoggedValue)], res: LoggedValue)(implicit
+    def onLeave[F[_]](cls: Class[?], method: String, args: Seq[(String, LoggedValue)], res: LoggedValue)(implicit
         F: LoggingBase[F]
     ): F[Unit] = onLog("leaving {} {} with result {}", method, new ArgsLoggable(args), res)
   }
@@ -95,21 +96,22 @@ object LoggingMidBuilder {
   }
 }
 
-trait LoggingErrMidBuilder[E] extends LoggingMidBuilder with Builder[LoggingErrMid[E, *]] {
+trait LoggingErrMidBuilder[E] extends LoggingMidBuilder with Builder[LoggingErrMid[E, _]] {
   def onFault[F[_]: LoggingBase](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: Seq[(String, LoggedValue)],
       err: E
   ): F[Unit]
 
-  override def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[Any]]) = new PreparedErr[Alg](Alg.runtimeClass)
+  override def prepare[Alg[_[_]]](implicit Alg: ClassTag[Alg[HKAny]]): Prepared[Alg, LoggingErrMid[E, _]] =
+    new PreparedErr[Alg](Alg.runtimeClass)
 
   protected class MethodErrImpl[U[f[_]], Res: Loggable](
-      cls: Class[_],
+      cls: Class[?],
       method: String,
       args: mutable.Buffer[(String, LoggedValue)]
-  ) extends MethodImpl[U, Res](cls, method, args) with Method[U, Res, LoggingErrMid[E, *]] {
+  ) extends MethodImpl[U, Res](cls, method, args) with Method[U, Res, LoggingErrMid[E, _]] {
     override def result: LoggingErrMid[E, Res] = new LoggingErrMid[E, Res] {
       private[this] val argSeq = args.toSeq
 
@@ -120,7 +122,7 @@ trait LoggingErrMidBuilder[E] extends LoggingMidBuilder with Builder[LoggingErrM
     }
   }
 
-  class PreparedErr[U[f[_]]](cls: Class[_]) extends super.PreparedImpl[U](cls) with Prepared[U, LoggingErrMid[E, *]] {
+  class PreparedErr[U[f[_]]](cls: Class[?]) extends super.PreparedImpl[U](cls) with Prepared[U, LoggingErrMid[E, _]] {
     override def start[Res: Loggable](method: String): MethodErrImpl[U, Res] =
       new MethodErrImpl(cls, method, mutable.Buffer())
   }
@@ -131,7 +133,7 @@ object LoggingErrMidBuilder {
     implicit def errLoggable: Loggable[E]
 
     def onFault[F[_]](
-        cls: Class[_],
+        cls: Class[?],
         method: String,
         args: Seq[(String, LoggedValue)],
         err: E
@@ -148,7 +150,7 @@ object LoggingErrMidBuilder {
     def onFaultLog[F[_]: LoggingBase](message: String, values: LoggedValue*): F[Unit]
 
     def onFault[F[_]](
-        cls: Class[_],
+        cls: Class[?],
         method: String,
         args: Seq[(String, LoggedValue)],
         err: E
