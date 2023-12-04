@@ -7,8 +7,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import tofu.logging.{LoggedValue, Logging, Logs}
 import tofu.syntax.location.logging._
 
-object WriterLogs extends Logs[Id, Writer[List[String], _] {
-  override def byName(name: String): Id[Logging[Writer[List[String], _]]] = new Logging[Writer[List[String], _]] {
+object WriterLogs extends Logs[Id, Writer[List[String], _]] {
+  def byName(name: String): Id[Logging[Writer[List[String], _]]] = new Logging[Writer[List[String], _]] {
     override def write(level: Logging.Level, message: String, values: LoggedValue*): Writer[List[String], Unit] =
       Writer.tell(s"${level.toString.toUpperCase} | $message" :: values.map(_.toString).toList)
   }
