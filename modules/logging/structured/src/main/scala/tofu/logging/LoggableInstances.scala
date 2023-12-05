@@ -6,7 +6,6 @@ import java.util.UUID
 import scala.collection.immutable.SortedSet
 import scala.collection.{immutable, mutable}
 import scala.concurrent.duration.FiniteDuration
-import scala.{specialized => sp}
 
 import alleycats.std.iterable._
 import alleycats.std.set._
@@ -184,7 +183,7 @@ class LoggableInstances {
       case Some(a) => loggable.putValue(a, v)
     }
 
-    def fields[I, V, R, @sp(Unit) M](oa: Option[T], i: I)(implicit receiver: LogRenderer[I, V, R, M]): R = oa match {
+    def fields[I, V, R, @specialized(Unit) M](oa: Option[T], i: I)(implicit receiver: LogRenderer[I, V, R, M]): R = oa match {
       case None    => i.noop
       case Some(a) => loggable.fields(a, i)
     }

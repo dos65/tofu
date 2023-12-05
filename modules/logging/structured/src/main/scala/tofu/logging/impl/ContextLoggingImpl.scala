@@ -7,7 +7,7 @@ import cats.syntax.applicative._
 import org.slf4j.{Logger, Marker}
 import scala.annotation.nowarn
 
-@nowarn("cat=lint-infer-any")
+@nowarn("msg=a type was inferred to be `Object`") //cat=lint-infer-any filter does not work for Scala 3
 class ContextLoggingImpl[F[_]: Applicative, C: Loggable, Service](context: F WithContext C, logger: Logger)
     extends LoggingImpl[F](logger) {
 

@@ -7,7 +7,7 @@ import cats.Monad
 import tofu.Delay
 import scala.annotation.nowarn
 
-@nowarn("cat=lint-infer-any")
+@nowarn("msg=a type was inferred to be `Object`") //cat=lint-infer-any filter does not work for Scala 3
 class SyncLogging[F[_]: Monad](logger: Logger)(implicit F: Delay[F]) extends LoggingImpl[F](logger) {
   override def trace(message: String, values: LoggedValue*): F[Unit] =
     F.delay(logger.trace(message, values: _*)).whenA(traceEnabled)

@@ -1,6 +1,7 @@
 package tofu.logging
 package builder
 
+import scala.collection.immutable.Seq
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import tofu.syntax.monadic._

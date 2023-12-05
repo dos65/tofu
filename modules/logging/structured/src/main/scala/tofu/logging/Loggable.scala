@@ -9,7 +9,7 @@ import tofu.logging.impl._
 import tofu.syntax.logRenderer._
 
 import scala.annotation.unused
-import scala.{PartialFunction => PF, specialized => sp}
+import scala.{PartialFunction => PF}
 
 /** Typeclass for adding custom log values to message
   */
@@ -39,7 +39,7 @@ trait Loggable[A] extends Loggable.Base[A] {
     */
   def singleton(name: String): Loggable[A] = new SingletonLoggable[A](name, this)
 
-  def showInstance: Show[A] = logShow
+  def showInstance: Show[A] = (a: A) => logShow(a)
 
   def narrow[B <: A]: Loggable[B] = this.asInstanceOf[Loggable[B]]
 
@@ -105,7 +105,7 @@ object Loggable extends LoggableInstances with DataComp[Loggable] {
       *   new Logged Value
       */
     def loggedValue(a: A): LoggedValue = new LoggedValue {
-      override def logFields[I, V, @sp(Unit) R, @sp M](i: I)(implicit r: LogRenderer[I, V, R, M]): R =
+      override def logFields[I, V, @specialized(Unit) R, @specialized M](i: I)(implicit r: LogRenderer[I, V, R, M]): R =
         fields[I, V, R, M](a, i)
 
       override def putValue[I, V, R, S](v: V)(implicit r: LogRenderer[I, V, R, S]): S = self.putValue(a, v)

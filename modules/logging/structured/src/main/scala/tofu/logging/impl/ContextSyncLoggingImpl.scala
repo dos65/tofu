@@ -7,7 +7,7 @@ import tofu.syntax.monadic._
 import cats.Monad
 import scala.annotation.nowarn
 
-@nowarn("cat=lint-infer-any")
+@nowarn("msg=a type was inferred to be `Object`") //cat=lint-infer-any filter does not work for Scala 3
 class ContextSyncLoggingImpl[F[_]: Monad, C: Loggable](context: F WithContext C, logger: Logger)(implicit F: Delay[F])
     extends LoggingImpl[F](logger) {
 
