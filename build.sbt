@@ -139,15 +139,7 @@ lazy val loggingStr = projectMatrix
       alleycats,
       catsTaglessCore,
       scalatest
-    ),
-    libraryDependencies ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, n)) =>
-          Seq(derevo, catsTaglessMacros)
-        case _            =>
-          Seq.empty
-      }
-    }
+    )
   )
   .jvmPlatform(scala2And3Versions)
   .dependsOn(kernel)
