@@ -133,8 +133,9 @@ lazy val loggingStr = projectMatrix
     libraryDependencies ++= Seq(
       catsCore,
       circeCore,
-      tethys,
-      tethysJackson,
+      // it is impossible to use tethys compiled for scala 3 until https://github.com/tethys-json/tethys/issues/266 is resolved
+      tethys cross CrossVersion.for3Use2_13,
+      tethysJackson cross CrossVersion.for3Use2_13,
       slf4j,
       alleycats,
       catsTaglessCore,
