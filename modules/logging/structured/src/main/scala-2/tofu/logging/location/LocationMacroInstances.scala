@@ -3,13 +3,11 @@ package tofu.logging.location
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.macros.blackbox
-import scala.annotation.nowarn
 
 trait LocationMacroInstances {
   implicit def location: Location = macro LocationMacro.getEnclosingPosition
 }
 
-@nowarn("cat=lint-infer-any")
 object LocationMacro {
 
   /** Based on Izumi Logstage CodePosition */
@@ -48,14 +46,14 @@ object LocationMacro {
     val st = mutable.ArrayBuffer[c.Symbol]()
     rec(c.internal.enclosingOwner, st)
 
-    st.tail.map {
-      case s if s.isPackage   => s.name
-      case s if goodSymbol(s) => s.name
+    st.tail.flatMap {
+      case s if s.isPackage   => Some(s.name)
+      case s if goodSymbol(s) => Some(s.name)
       case s                  =>
         if (s.isClass) {
-          s.asClass.baseClasses.find(goodSymbol).map(_.name).getOrElse(s.pos.line)
+          s.asClass.baseClasses.find(goodSymbol).map(_.name)
         } else {
-          s.pos.line
+          None
         }
     }
       .map(_.toString.trim)
