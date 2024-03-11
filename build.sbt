@@ -8,7 +8,8 @@ import complete.DefaultParsers._
 import sbt.librarymanagement.CrossVersion.{binaryScalaVersion, partialVersion}
 
 lazy val scala2Versions     = List(Version.scala212, Version.scala213)
-lazy val scala2And3Versions = scala2Versions ::: List(Version.scala3)
+lazy val scala3Versions     = List(Version.scala3)
+lazy val scala2And3Versions = scala2Versions ++ scala3Versions
 
 val scopesDescription = s"Scala version can be: ${scala2And3Versions.mkString}"
 val testScoped        = inputKey[Unit](s"Run tests in the given scope. Usage: testScoped [scala version]. $scopesDescription")
@@ -149,11 +150,24 @@ lazy val loggingDer = projectMatrix
   .in(modules / "logging" / "derivation")
   .settings(
     defaultSettings,
+    scala3MigratedModuleOptions,
     libraryDependencies ++= Seq(derevo, magnolia2, slf4j, glassMacro % Test),
     name := "tofu-logging-derivation"
   )
   .jvmPlatform(scala2Versions)
-  .dependsOn(loggingStr, derivation % "compile->test")
+  //.dependsOn(loggingStr, derivation % "compile->test")
+  .dependsOn(loggingStr)
+
+lazy val loggingDer3 = projectMatrix
+  .in(modules / "logging" / "derivation")
+  .settings(
+    defaultSettings,
+    scala3MigratedModuleOptions,
+    libraryDependencies ++= Seq(magnolia3, slf4j),
+    name := "tofu-logging-derivation"
+  )
+  .jvmPlatform(scala3Versions)
+  .dependsOn(loggingStr)
 
 lazy val loggingLayout = projectMatrix
   .in(modules / "logging" / "layout")
