@@ -151,22 +151,16 @@ lazy val loggingDer = projectMatrix
   .settings(
     defaultSettings,
     scala3MigratedModuleOptions,
-    libraryDependencies ++= Seq(derevo, magnolia2, slf4j, glassMacro % Test),
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) => Seq(derevo, magnolia2, slf4j, glassMacro % Test)
+        case Some((3, _)) => Seq(magnolia3, slf4j)
+        case _ => Seq.empty
+      }
+    },
     name := "tofu-logging-derivation"
   )
-  .jvmPlatform(scala2Versions)
-  //.dependsOn(loggingStr, derivation % "compile->test")
-  .dependsOn(loggingStr)
-
-lazy val loggingDer3 = projectMatrix
-  .in(modules / "logging" / "derivation")
-  .settings(
-    defaultSettings,
-    scala3MigratedModuleOptions,
-    libraryDependencies ++= Seq(magnolia3, slf4j),
-    name := "tofu-logging-derivation"
-  )
-  .jvmPlatform(scala3Versions)
+  .jvmPlatform(scala2And3Versions)
   .dependsOn(loggingStr)
 
 lazy val loggingLayout = projectMatrix

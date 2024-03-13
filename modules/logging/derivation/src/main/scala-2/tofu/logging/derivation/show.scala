@@ -21,7 +21,7 @@ object show extends Derivation[Show] with NewTypeDerivation[Show] {
     if (ctx.isValueClass) {
       val param = ctx.parameters.head
       param.typeclass.show(param.dereference(value))
-    } else tofuJoin(ctx.typeName.short, masking.params[Typeclass, T](value, ctx.parameters)(_.show))
+    } else strJoin(ctx.typeName.short, masking.params[Typeclass, T](value, ctx.parameters)(_.show))
 
   /** choose which typeclass to use based on the subtype of the sealed trait */
   def split[T](ctx: SealedTrait[Typeclass, T]): Show[T] = value =>

@@ -1,7 +1,6 @@
 package tofu.logging
 package derivation
 
-import derevo.derive
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -71,27 +70,37 @@ class DerivedLoggableSuite extends AnyFlatSpec with Matchers {
 }
 
 object DerivedLoggableSuite {
-  @derive(loggable)
   final case class Foo(lol: String, kek: Option[Long])
+  object Foo {
+    given Loggable[Foo] = loggable.derived
+  }
 
-  @derive(loggable)
   final case class Bar(
       @hidden foo1: Option[Foo] = None,
       @unembed foo2: Option[Foo] = None,
       foo3: Option[Foo] = None
   )
+  object Bar {
+    given Loggable[Bar] = loggable.derived
+  }
 
-  @derive(loggable)
   final case class Jak(
       @masked(MaskMode.Erase) one: String,
       @masked(MaskMode.ForLength(1)) two: Long,
       @masked(MaskMode.Regexp("\\d*\\.(\\d*)".r)) three: Double,
       @masked(MaskMode.Regexp("-?\\d*\\.(\\d*)".r)) four: List[Double],
   )
+  object Jak {
+    given Loggable[Jak] = loggable.derived
+  }
 
-  @derive(loggable)
   final case class Baz(foos: List[Foo] = Nil, ys: Vector[Int] = Vector(), zs: Option[List[List[String]]] = None)
+  object Baz {
+    given Loggable[Baz] = loggable.derived
+  }
 
-  @derive(loggable)
   final case class MaskedBaz(@masked kek: Option[String], @ignoreOpt a: Option[String] = None)
+  object MaskedBaz {
+    given Loggable[MaskedBaz] = loggable.derived
+  }
 }

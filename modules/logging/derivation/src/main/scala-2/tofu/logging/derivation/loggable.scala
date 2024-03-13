@@ -37,7 +37,7 @@ object loggable extends Derivation[Loggable] with NewTypeDerivation[Loggable] {
 
     def logShow(value: T): String =
       if (doNotShow) ""
-      else tofuJoin(ctx.typeName.short, masking.params[Typeclass, T](value, ctx.parameters)(_.logShow))
+      else strJoin(ctx.typeName.short, masking.params[Typeclass, T](value, ctx.parameters)(_.logShow))
   }
 
   def split[T](ctx: SealedTrait[Typeclass, T]): Loggable[T] = new Typeclass[T] {

@@ -15,7 +15,7 @@ import cats.syntax.option._
 import cats.syntax.parallel._
 import cats.syntax.monoid._
 import cats.syntax.traverse._
-import magnolia.{CaseClass, Magnolia, SealedTrait}
+import magnolia1.{CaseClass, Magnolia, SealedTrait}
 import syntax.context._
 import syntax.handle._
 import tofu.config.ConfigError.{BadNumber, BadString, BadType, Invalid, MultipleVariants, NoVariantFound}
